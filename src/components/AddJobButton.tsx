@@ -61,8 +61,7 @@ export default function AddJobButton() {
                 <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Estatus</label>
                 <select name="status" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-indigo-500">
                   <option value="Aplicado">Aplicado</option>
-                  <option value="Entrevista Técnica">Entrevista Técnica</option>
-                  <option value="Entrevista RH">Entrevista RH</option>
+                  <option value="En Proceso / Docs">En Proceso / Docs</option>
                   <option value="Oferta Recibida">Oferta Recibida</option>
                   <option value="Rechazado">Rechazado</option>
                 </select>

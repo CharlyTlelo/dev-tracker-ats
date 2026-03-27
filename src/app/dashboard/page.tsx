@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 import AddJobButton from '@/components/AddJobButton';
+import StatusSelect from '@/components/StatusSelect';
 
 export const revalidate = 0; // Para que siempre traiga datos frescos
 
@@ -13,7 +14,7 @@ export default async function Dashboard() {
 
   // Calculamos las métricas
   const total = jobs?.length || 0;
-  const enEntrevista = jobs?.filter(j => j.status === 'Entrevista Técnica' || j.status === 'Entrevista RH').length || 0;
+  const enProceso = jobs?.filter(j => j.status === 'En Proceso / Docs').length || 0;
   const rechazados = jobs?.filter(j => j.status === 'Rechazado').length || 0;
   const ofertas = jobs?.filter(j => j.status === 'Oferta Recibida').length || 0;
 
@@ -45,7 +46,7 @@ export default async function Dashboard() {
       <section className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         {[
           { label: 'Aplicaciones Totales', value: total, color: 'text-blue-400' },
-          { label: 'En Entrevista', value: enEntrevista, color: 'text-yellow-400' },
+          { label: 'En Proceso / Docs', value: enProceso, color: 'text-yellow-400' },
           { label: 'Rechazados', value: rechazados, color: 'text-red-400' },
           { label: 'Ofertas Recibidas', value: ofertas, color: 'text-green-400' },
         ].map((metric, idx) => (
@@ -61,7 +62,6 @@ export default async function Dashboard() {
         <div className="bg-gray-800/30 rounded-xl border border-gray-700/50 overflow-hidden">
           <div className="p-6 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/50">
             <h2 className="text-lg font-bold text-white">Actividad Reciente</h2>
-            <button className="text-sm text-indigo-400 hover:text-indigo-300 font-semibold">Ver todas →</button>
           </div>
           
           <div className="overflow-x-auto">
@@ -70,9 +70,9 @@ export default async function Dashboard() {
                 <tr className="bg-gray-900/50 text-xs uppercase tracking-wider text-gray-500 border-b border-gray-700/50">
                   <th className="p-4 font-semibold">Empresa</th>
                   <th className="p-4 font-semibold">Puesto</th>
-                  <th className="p-4 font-semibold">Estatus</th>
+                  <th className="p-4 font-semibold text-center">Estatus (Clic para cambiar)</th>
                   <th className="p-4 font-semibold">Fecha</th>
-                  <th className="p-4 font-semibold text-right">Acción</th>
+                  <th className="p-4 font-semibold text-right"></th>
                 </tr>
               </thead>
               <tbody className="text-sm divide-y divide-gray-700/50">
@@ -94,21 +94,13 @@ export default async function Dashboard() {
                   <tr key={job.id} className="hover:bg-gray-800/50 transition">
                     <td className="p-4 font-medium text-white">{job.company}</td>
                     <td className="p-4 text-gray-300">{job.position}</td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                        job.status === 'Aplicado' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                        job.status.includes('Entrevista') ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                        job.status === 'Oferta Recibida' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                        'bg-red-500/10 text-red-400 border-red-500/20'
-                      }`}>
-                        {job.status}
-                      </span>
+                    <td className="p-4 text-center">
+                      <StatusSelect jobId={job.id} currentStatus={job.status} />
                     </td>
                     <td className="p-4 text-gray-400">
                       {new Date(job.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
                     <td className="p-4 text-right">
-                      <button className="text-gray-400 hover:text-white transition">Editar</button>
                     </td>
                   </tr>
                 ))}
