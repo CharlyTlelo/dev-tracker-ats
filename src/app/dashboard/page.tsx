@@ -39,6 +39,9 @@ export default async function Dashboard() {
           <Link href="/improvements" className="px-4 py-2 bg-yellow-900/50 hover:bg-yellow-800/50 text-yellow-400 rounded-lg text-sm font-semibold transition border border-yellow-500/30 text-center w-full md:w-auto">
             🚀 Improvements
           </Link>
+          <Link href="/profile" className="px-4 py-2 bg-purple-900/50 hover:bg-purple-800/50 text-purple-400 rounded-lg text-sm font-semibold transition border border-purple-500/30 text-center w-full md:w-auto">
+            👤 Perfil Maestro
+          </Link>
           <AddJobButton />
         </div>
       </header>
