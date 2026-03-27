@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
+import AddJobButton from '@/components/AddJobButton';
 
 export const revalidate = 0; // Para que siempre traiga datos frescos
 
@@ -30,9 +31,7 @@ export default async function Dashboard() {
           <Link href="/" className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm font-semibold transition border border-gray-700 text-center w-full md:w-auto">
             Volver al Portafolio
           </Link>
-          <button className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-sm font-bold text-white transition shadow-lg shadow-indigo-500/20 text-center w-full md:w-auto">
-            + Nueva Vacante
-          </button>
+          <AddJobButton />
         </div>
       </header>
 
