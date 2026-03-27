@@ -31,6 +31,9 @@ export default async function Dashboard() {
           <Link href="/" className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm font-semibold transition border border-gray-700 text-center w-full md:w-auto">
             Volver al Portafolio
           </Link>
+          <Link href="/work-analysis" className="px-4 py-2 bg-cyan-900/50 hover:bg-cyan-800/50 text-cyan-400 rounded-lg text-sm font-semibold transition border border-cyan-500/30 text-center w-full md:w-auto">
+            🧠 Work Analysis
+          </Link>
           <AddJobButton />
         </div>
       </header>
