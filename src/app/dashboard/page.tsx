@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 import AddJobButton from '@/components/AddJobButton';
 import StatusSelect from '@/components/StatusSelect';
+import ViewJobDetailsButton from '@/components/ViewJobDetailsButton';
 
 export const revalidate = 0; // Para que siempre traiga datos frescos
 
@@ -101,6 +102,7 @@ export default async function Dashboard() {
                       {new Date(job.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
                     <td className="p-4 text-right">
+                      <ViewJobDetailsButton job={job} />
                     </td>
                   </tr>
                 ))}
