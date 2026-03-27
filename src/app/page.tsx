@@ -34,10 +34,10 @@ export default function Home() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <a href="TU_LINK_DE_CV_AQUI" target="_blank" rel="noopener noreferrer" className="px-8 py-3.5 text-sm font-bold bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition shadow-lg shadow-indigo-500/30 text-center">
+          <a href="/cv-carlos-tlelo.pdf" target="_blank" rel="noopener noreferrer" className="px-8 py-3.5 text-sm font-bold bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition shadow-lg shadow-indigo-500/30 text-center">
             Ver Mi CV
           </a>
-          <a href="https://linkedin.com/in/TU_USUARIO_AQUI" target="_blank" rel="noopener noreferrer" className="px-8 py-3.5 text-sm font-bold bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition border border-gray-700 text-center">
+          <a href="https://www.linkedin.com/in/carlos-tlelo/" target="_blank" rel="noopener noreferrer" className="px-8 py-3.5 text-sm font-bold bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition border border-gray-700 text-center">
             Contactar por LinkedIn
           </a>
         </div>
