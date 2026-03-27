@@ -1,6 +1,21 @@
 import Link from 'next/link';
+import { supabase } from '@/utils/supabase';
 
-export default function Dashboard() {
+export const revalidate = 0; // Para que siempre traiga datos frescos
+
+export default async function Dashboard() {
+  // Traemos las vacantes desde Supabase, ordenadas por la más reciente
+  const { data: jobs, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  // Calculamos las métricas
+  const total = jobs?.length || 0;
+  const enEntrevista = jobs?.filter(j => j.status === 'Entrevista Técnica' || j.status === 'Entrevista RH').length || 0;
+  const rechazados = jobs?.filter(j => j.status === 'Rechazado').length || 0;
+  const ofertas = jobs?.filter(j => j.status === 'Oferta Recibida').length || 0;
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-8 font-sans selection:bg-indigo-500 selection:text-white">
       {/* Header del Dashboard */}
@@ -24,10 +39,10 @@ export default function Dashboard() {
       {/* Tarjetas de Métricas (Responsivo) */}
       <section className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         {[
-          { label: 'Aplicaciones Totales', value: '12', color: 'text-blue-400' },
-          { label: 'En Entrevista', value: '3', color: 'text-yellow-400' },
-          { label: 'Rechazados', value: '2', color: 'text-red-400' },
-          { label: 'Ofertas Recibidas', value: '0', color: 'text-green-400' },
+          { label: 'Aplicaciones Totales', value: total, color: 'text-blue-400' },
+          { label: 'En Entrevista', value: enEntrevista, color: 'text-yellow-400' },
+          { label: 'Rechazados', value: rechazados, color: 'text-red-400' },
+          { label: 'Ofertas Recibidas', value: ofertas, color: 'text-green-400' },
         ].map((metric, idx) => (
           <div key={idx} className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50 flex flex-col items-center md:items-start text-center md:text-left hover:bg-gray-800 transition">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{metric.label}</span>
@@ -56,34 +71,42 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="text-sm divide-y divide-gray-700/50">
-                {/* Fila de ejemplo 1 */}
-                <tr className="hover:bg-gray-800/50 transition">
-                  <td className="p-4 font-medium text-white">Mercado Libre</td>
-                  <td className="p-4 text-gray-300">Software Architect</td>
-                  <td className="p-4">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-                      Entrevista Técnica
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-400">24 Mar 2026</td>
-                  <td className="p-4 text-right">
-                    <button className="text-gray-400 hover:text-white transition">Editar</button>
-                  </td>
-                </tr>
-                {/* Fila de ejemplo 2 */}
-                <tr className="hover:bg-gray-800/50 transition">
-                  <td className="p-4 font-medium text-white">Clip</td>
-                  <td className="p-4 text-gray-300">Senior Backend Engineer</td>
-                  <td className="p-4">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                      Aplicado
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-400">22 Mar 2026</td>
-                  <td className="p-4 text-right">
-                    <button className="text-gray-400 hover:text-white transition">Editar</button>
-                  </td>
-                </tr>
+                {error && (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-red-400">
+                      Error al cargar los datos: {error.message}
+                    </td>
+                  </tr>
+                )}
+                {!error && jobs?.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-gray-400">
+                      Aún no has agregado ninguna vacante. ¡Es hora de aplicar! 🚀
+                    </td>
+                  </tr>
+                )}
+                {jobs?.map((job) => (
+                  <tr key={job.id} className="hover:bg-gray-800/50 transition">
+                    <td className="p-4 font-medium text-white">{job.company}</td>
+                    <td className="p-4 text-gray-300">{job.position}</td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                        job.status === 'Aplicado' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                        job.status.includes('Entrevista') ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                        job.status === 'Oferta Recibida' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                        'bg-red-500/10 text-red-400 border-red-500/20'
+                      }`}>
+                        {job.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-gray-400">
+                      {new Date(job.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="p-4 text-right">
+                      <button className="text-gray-400 hover:text-white transition">Editar</button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
