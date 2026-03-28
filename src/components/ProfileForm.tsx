@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabase';
+import { jsPDF } from 'jspdf';
 
 export default function ProfileForm() {
   const [loading, setLoading] = useState(true);
@@ -46,6 +47,86 @@ export default function ProfileForm() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const downloadCV = () => {
+    const doc = new jsPDF();
+    let yOffset = 20;
+
+    // Título y Nombre
+    doc.setFontSize(22);
+    doc.text(formData.name || 'Currículum Vitae', 20, yOffset);
+    yOffset += 10;
+    
+    doc.setFontSize(16);
+    doc.text(formData.title || 'Perfil Maestro', 20, yOffset);
+    yOffset += 15;
+    
+    // Bio
+    if (formData.bio) {
+      doc.setFontSize(10);
+      const splitBio = doc.splitTextToSize(formData.bio, 170);
+      doc.text(splitBio, 20, yOffset);
+      yOffset += (splitBio.length * 5) + 10;
+    }
+
+    // Skills
+    if (formData.skills) {
+      doc.setFontSize(14);
+      doc.text("Habilidades Clave", 20, yOffset);
+      yOffset += 8;
+      doc.setFontSize(10);
+      const splitSkills = doc.splitTextToSize(formData.skills, 170);
+      doc.text(splitSkills, 20, yOffset);
+      yOffset += (splitSkills.length * 5) + 10;
+    }
+
+    // Experiencia
+    if (formData.experience) {
+      doc.setFontSize(14);
+      doc.text("Experiencia Laboral", 20, yOffset);
+      yOffset += 10;
+
+      try {
+        const expArray = JSON.parse(formData.experience);
+        expArray.forEach((job: any) => {
+          if (yOffset > 270) {
+            doc.addPage();
+            yOffset = 20;
+          }
+          doc.setFontSize(12);
+          const puestoTitle = `${job.puesto || ''} | ${job.empresa || ''}`;
+          doc.text(puestoTitle, 20, yOffset);
+          yOffset += 6;
+          
+          doc.setFontSize(10);
+          doc.setTextColor(100);
+          doc.text(job.periodo || '', 20, yOffset);
+          doc.setTextColor(0);
+          yOffset += 8;
+
+          if (job.logros && Array.isArray(job.logros)) {
+            job.logros.forEach((logro: string) => {
+              if (yOffset > 280) {
+                doc.addPage();
+                yOffset = 20;
+              }
+              const splitLogro = doc.splitTextToSize(`• ${logro}`, 170);
+              doc.text(splitLogro, 20, yOffset);
+              yOffset += (splitLogro.length * 5) + 2;
+            });
+          }
+          yOffset += 6;
+        });
+      } catch (e) {
+        // Fallback si no es un array JSON válido
+        const splitExp = doc.splitTextToSize(formData.experience, 170);
+        doc.setFontSize(10);
+        doc.text(splitExp, 20, yOffset);
+      }
+    }
+
+    doc.save(`CV_${formData.name ? formData.name.replace(/ /g, '_') : 'Perfil_Maestro'}.pdf`);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -59,8 +140,7 @@ export default function ProfileForm() {
         xpJson = formData.experience ? JSON.parse(formData.experience) : [];
         eduJson = formData.education ? JSON.parse(formData.education) : [];
     } catch (err) {
-        // Fallback if not valid JSON, save as text array inside JSON or just let it fail gracefully.
-        alert('Advertencia: El formato de Experiencia/Educación no es JSON válido (por ahora guárdalo como texto entre corchetes [] o usa comillas). Se intentará guardar como string.');
+        // Fallback si no es JSON válido
     }
 
     const payload = {
@@ -68,7 +148,6 @@ export default function ProfileForm() {
       title: formData.title,
       bio: formData.bio,
       skills: skillsArray,
-      // Para esta versión sencilla, si falla el parseo lo guardamos como texto plano en jsonb:
       experience: xpJson,
       education: eduJson,
       updated_at: new Date()
@@ -124,8 +203,15 @@ export default function ProfileForm() {
         <textarea name="experience" value={formData.experience} onChange={handleChange} rows={6} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 font-mono text-xs" placeholder='[{"empresa": "Ejemplo", "puesto": "Sr Dev", "años": "2020-2023", "logros": "Mencionaré que hice X y Y..."}]' />
       </div>
 
-      {/* Botón de Guardar */}
-      <div className="flex justify-end sticky bottom-4 z-10">
+      {/* Botones */}
+      <div className="flex justify-end gap-4 sticky bottom-4 z-10">
+        <button 
+          type="button" 
+          onClick={downloadCV}
+          className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition shadow-2xl shadow-blue-500/40 flex items-center gap-2"
+        >
+          📄 Descargar CV (PDF)
+        </button>
         <button 
           type="submit" 
           disabled={saving}
