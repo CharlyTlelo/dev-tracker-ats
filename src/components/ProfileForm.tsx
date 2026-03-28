@@ -38,6 +38,9 @@ export default function ProfileForm() {
           experience: typeof data.experience === 'string' ? data.experience : JSON.stringify(data.experience, null, 2) || '',
           education: typeof data.education === 'string' ? data.education : JSON.stringify(data.education, null, 2) || ''
         });
+        if (data.photo_url) {
+           setPhotoBase64(data.photo_url);
+        }
       }
       setLoading(false);
     }
@@ -63,27 +66,36 @@ export default function ProfileForm() {
     const doc = new jsPDF();
     let yOffset = 20;
 
-    // Foto de perfil
-    if (photoBase64) {
-      // Intentar detectar si es PNG o JPEG basado en el data URL
-      const isPng = photoBase64.startsWith('data:image/png');
-      const format = isPng ? 'PNG' : 'JPEG';
-      doc.addImage(photoBase64, format, 160, 15, 35, 35);
-    }
+    // Dibujar fondo oscuro en la cabecera (opcional, para darle más estilo ATS moderno)
+    // doc.setFillColor(30, 41, 59);
+    // doc.rect(0, 0, 210, 45, 'F');
 
     // Título y Nombre
     doc.setFontSize(22);
+    // doc.setTextColor(255, 255, 255);
     doc.text(formData.name || 'Currículum Vitae', 20, yOffset);
     yOffset += 10;
     
     doc.setFontSize(16);
     doc.text(formData.title || 'Perfil Maestro', 20, yOffset);
     yOffset += 15;
+
+    // Foto de perfil circular
+    if (photoBase64) {
+      // Intentar detectar si es PNG o JPEG basado en el data URL
+      const isPng = photoBase64.startsWith('data:image/png');
+      const format = isPng ? 'PNG' : 'JPEG';
+      
+      // jsPDF no soporta clipping circular nativo fácilmente sin meterse con graphics state avanzados,
+      // pero colocamos la foto bien alineada a la derecha
+      doc.addImage(photoBase64, format, 150, 10, 40, 40);
+    }
     
     // Bio
     if (formData.bio) {
       doc.setFontSize(10);
-      const splitBio = doc.splitTextToSize(formData.bio, photoBase64 ? 130 : 170);
+      doc.setTextColor(50, 50, 50);
+      const splitBio = doc.splitTextToSize(formData.bio, photoBase64 ? 120 : 170);
       doc.text(splitBio, 20, yOffset);
       yOffset += (splitBio.length * 5) + 10;
     }
@@ -96,9 +108,11 @@ export default function ProfileForm() {
     // Skills
     if (formData.skills) {
       doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
       doc.text("Habilidades Clave", 20, yOffset);
       yOffset += 8;
       doc.setFontSize(10);
+      doc.setTextColor(50, 50, 50);
       const splitSkills = doc.splitTextToSize(formData.skills, 170);
       doc.text(splitSkills, 20, yOffset);
       yOffset += (splitSkills.length * 5) + 10;
@@ -107,6 +121,7 @@ export default function ProfileForm() {
     // Experiencia
     if (formData.experience) {
       doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
       doc.text("Experiencia Laboral", 20, yOffset);
       yOffset += 10;
 
@@ -118,14 +133,15 @@ export default function ProfileForm() {
             yOffset = 20;
           }
           doc.setFontSize(12);
+          doc.setTextColor(0, 0, 0);
           const puestoTitle = `${job.puesto || ''} | ${job.empresa || ''}`;
           doc.text(puestoTitle, 20, yOffset);
           yOffset += 6;
           
           doc.setFontSize(10);
-          doc.setTextColor(100);
+          doc.setTextColor(100, 100, 100);
           doc.text(job.periodo || '', 20, yOffset);
-          doc.setTextColor(0);
+          doc.setTextColor(50, 50, 50);
           yOffset += 8;
 
           if (job.logros && Array.isArray(job.logros)) {
@@ -175,16 +191,17 @@ export default function ProfileForm() {
       skills: skillsArray,
       experience: xpJson,
       education: eduJson,
+      photo_url: photoBase64,
       updated_at: new Date()
     };
 
     if (profileId) {
       const { error } = await supabase.from('profile').update(payload).eq('id', profileId);
-      if (error) alert('Error: ' + error.message);
-      else alert('¡Perfil actualizado con éxito! 🪄');
+      if (error) alert('Error al guardar: ' + error.message);
+      else alert('¡Perfil guardado con éxito! 🪄');
     } else {
       const { data, error } = await supabase.from('profile').insert([payload]).select().single();
-      if (error) alert('Error: ' + error.message);
+      if (error) alert('Error al crear perfil: ' + error.message);
       else {
         alert('¡Perfil creado con éxito! 🪄');
         setProfileId(data.id);
@@ -201,18 +218,34 @@ export default function ProfileForm() {
         <h2 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">Identidad</h2>
         
         {/* FOTO DE PERFIL */}
-        <div className="mb-4">
-          <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Foto para el CV</label>
-          <div className="flex items-center gap-4">
-            {photoBase64 && (
-              <img src={photoBase64} alt="Preview" className="w-16 h-16 rounded-full object-cover border-2 border-purple-500" />
+        <div className="mb-6">
+          <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-2">Foto para el CV</label>
+          <div className="flex items-center gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-700 border-dashed">
+            {photoBase64 ? (
+              <div className="relative">
+                <img src={photoBase64} alt="Preview" className="w-20 h-20 rounded-lg object-cover border border-gray-600 shadow-lg" />
+                <button 
+                  type="button"
+                  onClick={() => setPhotoBase64(null)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div className="w-20 h-20 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-3xl">
+                🧑‍💻
+              </div>
             )}
-            <input 
-              type="file" 
-              accept="image/png, image/jpeg" 
-              onChange={handleImageUpload} 
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-500 file:text-white hover:file:bg-purple-600 cursor-pointer" 
-            />
+            <div className="flex-1">
+              <input 
+                type="file" 
+                accept="image/png, image/jpeg" 
+                onChange={handleImageUpload} 
+                className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-500/20 file:text-purple-400 hover:file:bg-purple-500/30 cursor-pointer" 
+              />
+              <p className="text-xs text-gray-500 mt-2">Formatos aceptados: PNG, JPG (Se incrustará en la esquina superior derecha del PDF)</p>
+            </div>
           </div>
         </div>
 
