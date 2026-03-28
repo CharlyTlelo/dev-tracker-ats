@@ -8,6 +8,7 @@ export default function ProfileForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
 
   // Campos de formulario base
   const [formData, setFormData] = useState({
@@ -47,9 +48,28 @@ export default function ProfileForm() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const downloadCV = () => {
     const doc = new jsPDF();
     let yOffset = 20;
+
+    // Foto de perfil
+    if (photoBase64) {
+      // Intentar detectar si es PNG o JPEG basado en el data URL
+      const isPng = photoBase64.startsWith('data:image/png');
+      const format = isPng ? 'PNG' : 'JPEG';
+      doc.addImage(photoBase64, format, 160, 15, 35, 35);
+    }
 
     // Título y Nombre
     doc.setFontSize(22);
@@ -63,9 +83,14 @@ export default function ProfileForm() {
     // Bio
     if (formData.bio) {
       doc.setFontSize(10);
-      const splitBio = doc.splitTextToSize(formData.bio, 170);
+      const splitBio = doc.splitTextToSize(formData.bio, photoBase64 ? 130 : 170);
       doc.text(splitBio, 20, yOffset);
       yOffset += (splitBio.length * 5) + 10;
+    }
+
+    // Asegurar que bajamos debajo de la foto si la bio fue muy corta
+    if (photoBase64 && yOffset < 60) {
+      yOffset = 60;
     }
 
     // Skills
@@ -174,6 +199,23 @@ export default function ProfileForm() {
     <form onSubmit={handleSave} className="space-y-6">
       <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
         <h2 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">Identidad</h2>
+        
+        {/* FOTO DE PERFIL */}
+        <div className="mb-4">
+          <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Foto para el CV</label>
+          <div className="flex items-center gap-4">
+            {photoBase64 && (
+              <img src={photoBase64} alt="Preview" className="w-16 h-16 rounded-full object-cover border-2 border-purple-500" />
+            )}
+            <input 
+              type="file" 
+              accept="image/png, image/jpeg" 
+              onChange={handleImageUpload} 
+              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-500 file:text-white hover:file:bg-purple-600 cursor-pointer" 
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Nombre Completo</label>
