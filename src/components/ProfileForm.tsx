@@ -80,15 +80,33 @@ export default function ProfileForm() {
     doc.text(formData.title || 'Perfil Maestro', 20, yOffset);
     yOffset += 15;
 
-    // Foto de perfil circular
+    // Foto de perfil
     if (photoBase64) {
       // Intentar detectar si es PNG o JPEG basado en el data URL
       const isPng = photoBase64.startsWith('data:image/png');
       const format = isPng ? 'PNG' : 'JPEG';
       
-      // jsPDF no soporta clipping circular nativo fácilmente sin meterse con graphics state avanzados,
-      // pero colocamos la foto bien alineada a la derecha
-      doc.addImage(photoBase64, format, 150, 10, 40, 40);
+      // Obtener proporciones reales de la imagen para no deformarla
+      const imgProps = doc.getImageProperties(photoBase64);
+      const ratio = imgProps.width / imgProps.height;
+      
+      // Definir un área máxima (ej. 40x50)
+      const maxWidth = 40;
+      const maxHeight = 45;
+      
+      let finalWidth = maxWidth;
+      let finalHeight = finalWidth / ratio;
+      
+      // Si la altura calculada se pasa del máximo, ajustamos basados en la altura
+      if (finalHeight > maxHeight) {
+        finalHeight = maxHeight;
+        finalWidth = finalHeight * ratio;
+      }
+
+      // Alinearla a la derecha (margen derecho en x = 190)
+      const xPos = 190 - finalWidth;
+      
+      doc.addImage(photoBase64, format, xPos, 10, finalWidth, finalHeight);
     }
     
     // Bio
