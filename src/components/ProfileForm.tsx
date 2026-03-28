@@ -17,7 +17,10 @@ export default function ProfileForm() {
     bio: '',
     skills: '',
     experience: '',
-    education: ''
+    education: '',
+    linkedin: '',
+    github: '',
+    portfolio: ''
   });
 
   useEffect(() => {
@@ -30,13 +33,24 @@ export default function ProfileForm() {
         
       if (data) {
         setProfileId(data.id);
+        
+        let socialLinks = { linkedin: '', github: '', portfolio: '' };
+        if (data.social_links) {
+          try {
+            socialLinks = typeof data.social_links === 'string' ? JSON.parse(data.social_links) : data.social_links;
+          } catch (e) {}
+        }
+
         setFormData({
           name: data.name || '',
           title: data.title || '',
           bio: data.bio || '',
           skills: data.skills ? data.skills.join(', ') : '',
           experience: typeof data.experience === 'string' ? data.experience : JSON.stringify(data.experience, null, 2) || '',
-          education: typeof data.education === 'string' ? data.education : JSON.stringify(data.education, null, 2) || ''
+          education: typeof data.education === 'string' ? data.education : JSON.stringify(data.education, null, 2) || '',
+          linkedin: socialLinks.linkedin || '',
+          github: socialLinks.github || '',
+          portfolio: socialLinks.portfolio || ''
         });
         if (data.photo_url) {
            setPhotoBase64(data.photo_url);
@@ -66,13 +80,8 @@ export default function ProfileForm() {
     const doc = new jsPDF();
     let yOffset = 20;
 
-    // Dibujar fondo oscuro en la cabecera (opcional, para darle más estilo ATS moderno)
-    // doc.setFillColor(30, 41, 59);
-    // doc.rect(0, 0, 210, 45, 'F');
-
     // Título y Nombre
     doc.setFontSize(22);
-    // doc.setTextColor(255, 255, 255);
     doc.text(formData.name || 'Currículum Vitae', 20, yOffset);
     yOffset += 10;
     
@@ -82,28 +91,23 @@ export default function ProfileForm() {
 
     // Foto de perfil
     if (photoBase64) {
-      // Intentar detectar si es PNG o JPEG basado en el data URL
       const isPng = photoBase64.startsWith('data:image/png');
       const format = isPng ? 'PNG' : 'JPEG';
       
-      // Obtener proporciones reales de la imagen para no deformarla
       const imgProps = doc.getImageProperties(photoBase64);
       const ratio = imgProps.width / imgProps.height;
       
-      // Definir un área máxima (ej. 40x50)
       const maxWidth = 40;
       const maxHeight = 45;
       
       let finalWidth = maxWidth;
       let finalHeight = finalWidth / ratio;
       
-      // Si la altura calculada se pasa del máximo, ajustamos basados en la altura
       if (finalHeight > maxHeight) {
         finalHeight = maxHeight;
         finalWidth = finalHeight * ratio;
       }
 
-      // Alinearla a la derecha (margen derecho en x = 190)
       const xPos = 190 - finalWidth;
       
       doc.addImage(photoBase64, format, xPos, 10, finalWidth, finalHeight);
@@ -115,10 +119,23 @@ export default function ProfileForm() {
       doc.setTextColor(50, 50, 50);
       const splitBio = doc.splitTextToSize(formData.bio, photoBase64 ? 120 : 170);
       doc.text(splitBio, 20, yOffset);
-      yOffset += (splitBio.length * 5) + 10;
+      yOffset += (splitBio.length * 5) + 8;
     }
 
-    // Asegurar que bajamos debajo de la foto si la bio fue muy corta
+    // Enlaces Sociales
+    if (formData.linkedin || formData.github || formData.portfolio) {
+      doc.setFontSize(10);
+      doc.setTextColor(0, 102, 204); // Color link
+      let linksText = '';
+      if (formData.linkedin) linksText += `LinkedIn: ${formData.linkedin}   `;
+      if (formData.github) linksText += `GitHub: ${formData.github}   `;
+      if (formData.portfolio) linksText += `Portfolio: ${formData.portfolio}`;
+      
+      doc.text(linksText, 20, yOffset);
+      yOffset += 8;
+    }
+    doc.setTextColor(50, 50, 50);
+
     if (photoBase64 && yOffset < 60) {
       yOffset = 60;
     }
@@ -176,7 +193,6 @@ export default function ProfileForm() {
           yOffset += 6;
         });
       } catch (e) {
-        // Fallback si no es un array JSON válido
         const splitExp = doc.splitTextToSize(formData.experience, 170);
         doc.setFontSize(10);
         doc.text(splitExp, 20, yOffset);
@@ -190,7 +206,6 @@ export default function ProfileForm() {
     e.preventDefault();
     setSaving(true);
     
-    // Convertimos skills de string a arreglo limpio
     const skillsArray = formData.skills.split(',').map(s => s.trim()).filter(Boolean);
 
     let xpJson = [];
@@ -198,9 +213,7 @@ export default function ProfileForm() {
     try {
         xpJson = formData.experience ? JSON.parse(formData.experience) : [];
         eduJson = formData.education ? JSON.parse(formData.education) : [];
-    } catch (err) {
-        // Fallback si no es JSON válido
-    }
+    } catch (err) {}
 
     const payload = {
       name: formData.name,
@@ -210,6 +223,11 @@ export default function ProfileForm() {
       experience: xpJson,
       education: eduJson,
       photo_url: photoBase64,
+      social_links: {
+        linkedin: formData.linkedin,
+        github: formData.github,
+        portfolio: formData.portfolio
+      },
       updated_at: new Date()
     };
 
@@ -233,7 +251,7 @@ export default function ProfileForm() {
   return (
     <form onSubmit={handleSave} className="space-y-6">
       <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
-        <h2 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">Identidad</h2>
+        <h2 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">Identidad y Contacto</h2>
         
         {/* FOTO DE PERFIL */}
         <div className="mb-6">
@@ -252,7 +270,7 @@ export default function ProfileForm() {
               </div>
             ) : (
               <div className="w-20 h-20 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-3xl">
-                🧑‍💻
+                🧑💻
               </div>
             )}
             <div className="flex-1">
@@ -275,6 +293,22 @@ export default function ProfileForm() {
           <div>
             <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Título Profesional</label>
             <input required name="title" value={formData.title} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500" placeholder="Ej. Senior Software Architect" />
+          </div>
+        </div>
+
+        {/* REDES SOCIALES */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div>
+            <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">LinkedIn URL</label>
+            <input name="linkedin" value={formData.linkedin} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500" placeholder="https://linkedin.com/in/tu-perfil" />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">GitHub URL</label>
+            <input name="github" value={formData.github} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500" placeholder="https://github.com/tu-usuario" />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Portfolio / Web</label>
+            <input name="portfolio" value={formData.portfolio} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500" placeholder="https://tu-sitio.com" />
           </div>
         </div>
 
