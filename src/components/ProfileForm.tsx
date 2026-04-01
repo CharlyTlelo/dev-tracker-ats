@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabase';
 import { jsPDF } from 'jspdf';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
+
 
 export default function ProfileForm() {
   const [loading, setLoading] = useState(true);
@@ -266,6 +269,151 @@ export default function ProfileForm() {
     doc.save(`CV_${formData.name ? formData.name.replace(/ /g, '_') : 'Perfil_Maestro'}.pdf`);
   };
 
+  const downloadWord = async () => {
+    const children = [];
+    
+    // Título y Nombre
+    children.push(new Paragraph({
+      text: formData.name || 'Currículum Vitae',
+      heading: HeadingLevel.TITLE,
+      alignment: AlignmentType.CENTER
+    }));
+    
+    children.push(new Paragraph({
+      text: formData.title || 'Perfil Maestro',
+      heading: HeadingLevel.HEADING_2,
+      alignment: AlignmentType.CENTER
+    }));
+    
+    // Links
+    if (formData.linkedin || formData.github || formData.portfolio) {
+      let linksText = [];
+      if (formData.linkedin) linksText.push(`LinkedIn: ${formData.linkedin}`);
+      if (formData.github) linksText.push(`GitHub: ${formData.github}`);
+      if (formData.portfolio) linksText.push(`Portfolio: ${formData.portfolio}`);
+      
+      children.push(new Paragraph({
+        text: linksText.join(' | '),
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 }
+      }));
+    }
+
+    // Bio
+    if (formData.bio) {
+      children.push(new Paragraph({
+        children: [new TextRun({ text: formData.bio })],
+        spacing: { after: 200 }
+      }));
+    }
+
+    // Skills
+    if (formData.skills) {
+      children.push(new Paragraph({
+        text: "Habilidades Clave",
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 200, after: 100 }
+      }));
+      children.push(new Paragraph({
+        children: [new TextRun({ text: formData.skills })],
+        spacing: { after: 200 }
+      }));
+    }
+
+    // Experiencia
+    if (formData.experience) {
+      children.push(new Paragraph({
+        text: "Experiencia Laboral",
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 200, after: 100 }
+      }));
+      
+      const lines = formData.experience.split('\n');
+      lines.forEach(line => {
+        const text = line.trim();
+        if (!text) return;
+        
+        if (text.startsWith('### ')) {
+          children.push(new Paragraph({
+            text: text.replace('### ', ''),
+            heading: HeadingLevel.HEADING_3,
+            spacing: { before: 100 }
+          }));
+        } else if (text.startsWith('## ')) {
+          children.push(new Paragraph({
+            text: text.replace('## ', ''),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 200 }
+          }));
+        } else if (text.startsWith('# ')) {
+          children.push(new Paragraph({
+            text: text.replace('# ', ''),
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 200 }
+          }));
+        } else if (text.startsWith('- ') || text.startsWith('* ')) {
+          children.push(new Paragraph({
+            text: text.substring(2),
+            bullet: { level: 0 },
+            spacing: { before: 50 }
+          }));
+        } else {
+          children.push(new Paragraph({
+            text: text,
+            spacing: { before: 50 }
+          }));
+        }
+      });
+    }
+
+    // Educación
+    if (formData.education) {
+      children.push(new Paragraph({
+        text: "Educación",
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 300, after: 100 }
+      }));
+      
+      const lines = formData.education.split('\n');
+      lines.forEach(line => {
+        const text = line.trim();
+        if (!text) return;
+        
+        if (text.startsWith('### ')) {
+          children.push(new Paragraph({
+            text: text.replace('### ', ''),
+            heading: HeadingLevel.HEADING_3,
+            spacing: { before: 100 }
+          }));
+        } else if (text.startsWith('## ')) {
+          children.push(new Paragraph({
+            text: text.replace('## ', ''),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 200 }
+          }));
+        } else if (text.startsWith('- ') || text.startsWith('* ')) {
+          children.push(new Paragraph({
+            text: text.substring(2),
+            bullet: { level: 0 },
+            spacing: { before: 50 }
+          }));
+        } else {
+          children.push(new Paragraph({
+            text: text,
+            spacing: { before: 50 }
+          }));
+        }
+      });
+    }
+
+    const doc = new Document({
+      sections: [{ properties: {}, children: children }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `CV_${formData.name ? formData.name.replace(/ /g, '_') : 'Perfil_Maestro'}.docx`);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -402,6 +550,13 @@ export default function ProfileForm() {
           className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition shadow-2xl shadow-blue-500/40 flex items-center gap-2"
         >
           📄 Descargar CV (PDF)
+        </button>
+        <button 
+          type="button" 
+          onClick={downloadWord}
+          className="px-6 py-3.5 bg-blue-800 hover:bg-blue-900 text-white rounded-xl font-bold text-lg transition shadow-2xl shadow-blue-800/40 flex items-center gap-2"
+        >
+          📝 Descargar CV (Word)
         </button>
         <button 
           type="submit" 
