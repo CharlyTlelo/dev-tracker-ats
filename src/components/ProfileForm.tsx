@@ -46,8 +46,8 @@ export default function ProfileForm() {
           title: data.title || '',
           bio: data.bio || '',
           skills: data.skills ? data.skills.join(', ') : '',
-          experience: typeof data.experience === 'string' ? data.experience : JSON.stringify(data.experience, null, 2) || '',
-          education: typeof data.education === 'string' ? data.education : JSON.stringify(data.education, null, 2) || '',
+          experience: typeof data.experience === 'string' ? data.experience : (data.experience ? JSON.stringify(data.experience, null, 2) : ''),
+          education: typeof data.education === 'string' ? data.education : (data.education ? JSON.stringify(data.education, null, 2) : ''),
           linkedin: socialLinks.linkedin || '',
           github: socialLinks.github || '',
           portfolio: socialLinks.portfolio || ''
@@ -160,43 +160,107 @@ export default function ProfileForm() {
       doc.text("Experiencia Laboral", 20, yOffset);
       yOffset += 10;
 
-      try {
-        const expArray = JSON.parse(formData.experience);
-        expArray.forEach((job: any) => {
-          if (yOffset > 270) {
-            doc.addPage();
-            yOffset = 20;
-          }
+      const lines = formData.experience.split('\n');
+      
+      lines.forEach((line) => {
+        if (yOffset > 275) {
+          doc.addPage();
+          yOffset = 20;
+        }
+        
+        const text = line.trim();
+        if (!text) {
+          yOffset += 4;
+          return;
+        }
+
+        if (text.startsWith('### ')) {
+          doc.setFontSize(11);
+          doc.setTextColor(50, 50, 50);
+          const cleanText = text.replace('### ', '');
+          const splitText = doc.splitTextToSize(cleanText, 170);
+          doc.text(splitText, 20, yOffset);
+          yOffset += (splitText.length * 5) + 3;
+        } else if (text.startsWith('## ')) {
           doc.setFontSize(12);
           doc.setTextColor(0, 0, 0);
-          const puestoTitle = `${job.puesto || ''} | ${job.empresa || ''}`;
-          doc.text(puestoTitle, 20, yOffset);
-          yOffset += 6;
-          
+          const cleanText = text.replace('## ', '');
+          const splitText = doc.splitTextToSize(cleanText, 170);
+          doc.text(splitText, 20, yOffset);
+          yOffset += (splitText.length * 5) + 4;
+        } else if (text.startsWith('# ')) {
+          doc.setFontSize(14);
+          doc.setTextColor(0, 0, 0);
+          const cleanText = text.replace('# ', '');
+          const splitText = doc.splitTextToSize(cleanText, 170);
+          doc.text(splitText, 20, yOffset);
+          yOffset += (splitText.length * 5) + 5;
+        } else if (text.startsWith('- ') || text.startsWith('* ')) {
           doc.setFontSize(10);
-          doc.setTextColor(100, 100, 100);
-          doc.text(job.periodo || '', 20, yOffset);
           doc.setTextColor(50, 50, 50);
-          yOffset += 8;
+          const cleanText = '• ' + text.substring(2);
+          const splitText = doc.splitTextToSize(cleanText, 165);
+          doc.text(splitText, 25, yOffset);
+          yOffset += (splitText.length * 5) + 2;
+        } else {
+          doc.setFontSize(10);
+          doc.setTextColor(50, 50, 50);
+          const splitText = doc.splitTextToSize(text, 170);
+          doc.text(splitText, 20, yOffset);
+          yOffset += (splitText.length * 5) + 2;
+        }
+      });
+    }
 
-          if (job.logros && Array.isArray(job.logros)) {
-            job.logros.forEach((logro: string) => {
-              if (yOffset > 280) {
-                doc.addPage();
-                yOffset = 20;
-              }
-              const splitLogro = doc.splitTextToSize(`• ${logro}`, 170);
-              doc.text(splitLogro, 20, yOffset);
-              yOffset += (splitLogro.length * 5) + 2;
-            });
-          }
-          yOffset += 6;
-        });
-      } catch (e) {
-        const splitExp = doc.splitTextToSize(formData.experience, 170);
-        doc.setFontSize(10);
-        doc.text(splitExp, 20, yOffset);
+    // Educación
+    if (formData.education) {
+      if (yOffset > 260) {
+        doc.addPage();
+        yOffset = 20;
+      } else {
+        yOffset += 5;
       }
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Educación", 20, yOffset);
+      yOffset += 10;
+
+      const lines = formData.education.split('\n');
+      
+      lines.forEach((line) => {
+        if (yOffset > 275) {
+          doc.addPage();
+          yOffset = 20;
+        }
+        
+        const text = line.trim();
+        if (!text) {
+          yOffset += 4;
+          return;
+        }
+
+        if (text.startsWith('## ')) {
+          doc.setFontSize(12);
+          doc.setTextColor(0, 0, 0);
+          const cleanText = text.replace('## ', '');
+          const splitText = doc.splitTextToSize(cleanText, 170);
+          doc.text(splitText, 20, yOffset);
+          yOffset += (splitText.length * 5) + 4;
+        } else if (text.startsWith('- ') || text.startsWith('* ')) {
+          doc.setFontSize(10);
+          doc.setTextColor(50, 50, 50);
+          const cleanText = '• ' + text.substring(2);
+          const splitText = doc.splitTextToSize(cleanText, 165);
+          doc.text(splitText, 25, yOffset);
+          yOffset += (splitText.length * 5) + 2;
+        } else {
+          doc.setFontSize(10);
+          doc.setTextColor(50, 50, 50);
+          const splitText = doc.splitTextToSize(text, 170);
+          doc.text(splitText, 20, yOffset);
+          yOffset += (splitText.length * 5) + 2;
+        }
+      });
     }
 
     doc.save(`CV_${formData.name ? formData.name.replace(/ /g, '_') : 'Perfil_Maestro'}.pdf`);
@@ -208,20 +272,13 @@ export default function ProfileForm() {
     
     const skillsArray = formData.skills.split(',').map(s => s.trim()).filter(Boolean);
 
-    let xpJson = [];
-    let eduJson = [];
-    try {
-        xpJson = formData.experience ? JSON.parse(formData.experience) : [];
-        eduJson = formData.education ? JSON.parse(formData.education) : [];
-    } catch (err) {}
-
     const payload = {
       name: formData.name,
       title: formData.title,
       bio: formData.bio,
       skills: skillsArray,
-      experience: xpJson,
-      education: eduJson,
+      experience: formData.experience,
+      education: formData.education,
       photo_url: photoBase64,
       social_links: {
         linkedin: formData.linkedin,
@@ -326,8 +383,8 @@ export default function ProfileForm() {
       {/* Experiencia */}
       <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
         <h2 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">Experiencia Laboral</h2>
-        <p className="text-sm text-gray-400 mb-2">Pega aquí tu historial completo (empresas, años, logros). La IA extraerá lo más importante después.</p>
-        <textarea name="experience" value={formData.experience} onChange={handleChange} rows={6} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 font-mono text-xs" placeholder='[{"empresa": "Ejemplo", "puesto": "Sr Dev", "años": "2020-2023", "logros": "Mencionaré que hice X y Y..."}]' />
+        <p className="text-sm text-gray-400 mb-2">Usa texto normal. Puedes usar <strong>##</strong> para Títulos de puestos, <strong>###</strong> para empresas o subtítulos y <strong>-</strong> para listas de logros.</p>
+        <textarea name="experience" value={formData.experience} onChange={handleChange} rows={12} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 font-sans text-sm" placeholder="## Senior Frontend Developer&#10;### TechCorp Inc. (2020 - Presente)&#10;- Lideré la migración a Next.js&#10;- Mejoré el rendimiento en un 40%" />
       </div>
 
       {/* Botones */}
