@@ -384,7 +384,14 @@ export default function ProfileForm() {
       <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
         <h2 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">Experiencia Laboral</h2>
         <p className="text-sm text-gray-400 mb-2">Usa texto normal. Puedes usar <strong>##</strong> para Títulos de puestos, <strong>###</strong> para empresas o subtítulos y <strong>-</strong> para listas de logros.</p>
-        <textarea name="experience" value={formData.experience} onChange={handleChange} rows={12} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 font-sans text-sm" placeholder="## Senior Frontend Developer&#10;### TechCorp Inc. (2020 - Presente)&#10;- Lideré la migración a Next.js&#10;- Mejoré el rendimiento en un 40%" />
+        <textarea name="experience" value={formData.experience} onChange={handleChange} rows={10} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 font-sans text-sm" placeholder="## Senior Frontend Developer&#10;### TechCorp Inc. (2020 - Presente)&#10;- Lideré la migración a Next.js&#10;- Mejoré el rendimiento en un 40%" />
+      </div>
+
+      {/* Educación */}
+      <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+        <h2 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">Educación</h2>
+        <p className="text-sm text-gray-400 mb-2">Usa formato de texto libre similar a experiencia.</p>
+        <textarea name="education" value={formData.education} onChange={handleChange} rows={6} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 font-sans text-sm" placeholder="## Ingeniería en Sistemas&#10;### Universidad Nacional (2015 - 2019)&#10;- Tesis en Inteligencia Artificial" />
       </div>
 
       {/* Botones */}
